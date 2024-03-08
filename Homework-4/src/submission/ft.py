@@ -79,7 +79,8 @@ def parameters_to_fine_tune(model: nn.Module, mode: str) -> List:
 
     if mode == 'all':
         ### START CODE HERE ###
-        pass
+        my_name = 'parameters_to_fine_tune:mode=all:'
+        return model.parameters()
         ### END CODE HERE ###
     elif mode == 'last':
         ### START CODE HERE ###
@@ -105,7 +106,7 @@ def get_loss(logits: torch.tensor, targets: torch.tensor) -> torch.tensor:
     """
     Computes the cross-entropy loss for either sequence classification or generation.
 
-    For generation, you'll need to deal with the fact that different sequences witihn
+    For generation, you'll need to deal with the fact that different sequences within
       the batch are different lengths, and the targets tensor includes some mask
       values (-100). The average loss is the *average loss over all non-masked timesteps*.
       You'll also need to handle the fact that the prediction for what token t will be is
@@ -128,11 +129,12 @@ def get_loss(logits: torch.tensor, targets: torch.tensor) -> torch.tensor:
     loss = None
     if logits.dim() == 2:
         ### START CODE HERE ###
-        pass
+        loss = F.cross_entropy(input=logits, target=targets)
         ### END CODE HERE ###
     elif logits.dim() == 3:
         ### START CODE HERE ###
         pass
+        #logits = logits.view(-1, logits.size(-1))
         ### END CODE HERE ###
     else:
         raise ValueError(f'Logits should either be 2-dim (for classification) or 3-dim (for generation); got {logits.dim()}')
@@ -165,7 +167,9 @@ def get_acc(logits, targets):
 
     if logits.dim() == 2:
         ### START CODE HERE ###
-        pass
+        # Method: match maximum value across classes (argmax), convert Boolean to float and take the mean.
+        acc = (torch.argmax(logits, dim=-1) == targets).float().mean().item()
+        return acc
         ### END CODE HERE ###
     elif logits.dim() == 3:
         ### START CODE HERE ###
