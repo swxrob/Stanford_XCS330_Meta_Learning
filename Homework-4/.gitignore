@@ -174,3 +174,11 @@ movielens_data/
 
 # Tensorboard events
 run/
+
+
+#####
+# RJR Additions
+#####
+
+# PyCharm
+.idea/
