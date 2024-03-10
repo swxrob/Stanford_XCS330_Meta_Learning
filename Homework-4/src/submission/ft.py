@@ -168,7 +168,13 @@ def get_acc(logits, targets):
     if logits.dim() == 2:
         ### START CODE HERE ###
         # Method: match maximum value across classes (argmax), convert Boolean to float and take the mean.
-        acc = (torch.argmax(logits, dim=-1) == targets).float().mean().item()
+        # One-liner:
+        #     acc = (torch.argmax(logits, dim=-1) == targets).float().mean().item()
+        # Replaced with the following since the Slack conversation indicated we might have some environment sensitivity / round off error propogation:
+        B = logits.shape[0]
+        logits_normalized = F.softmax(logits, dim=-1)
+        acc_bool = (torch.argmax(logits_normalized, dim=-1) == targets)
+        acc = (acc_bool.float().sum()/B).item()
         return acc
         ### END CODE HERE ###
     elif logits.dim() == 3:
