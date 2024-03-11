@@ -58,7 +58,81 @@ def get_icl_prompts(
     prompt = ''
 
     ### START CODE HERE ###
-    pass
+    # support_inputs = 2*support_inputs
+    # support_labels = 2*support_labels
+
+    idx = np.random.permutation(len(support_inputs)).squeeze()
+    x_inputs = np.array(support_inputs)[idx].tolist()
+    x_labels = np.array(support_labels)[idx].tolist()
+
+    if len(support_inputs) == 1:
+        x_inputs = [x_inputs]
+        x_labels = [x_labels]
+
+    # qa [only for bAbI]:
+    if prompt_mode == 'qa':
+        '''
+        Requirements:
+        
+        a. Add " In the ": 
+           Add " In the " after the question (including the final test question that we want to generate an answer for!) 
+           and before each answer, since this task involves answering questions about the physical whereabouts of a person. 
+        b. Add ".": 
+           In addition, add a period after the answer (omitting the period can significantly impact your results!). 
+        c. Add " ": 
+           Be sure to include a space between the question and "In the", as well as a space before the answer (though keep in mind Note 1!).
+        d. No " " at end: 
+           Note 1, Due to a quirk with GPT-2 tokenization, you should not include a space at the end of your prompt before generation.
+        e. Shuffle: 
+           Note 2: Be sure to shuffle the order of the support inputs/targets when you construct the prompt (we will need this randomization later).
+        
+        Example: 
+            "Sandra travelled to the kitchen. John went to the office. Where is Sandra? \
+            In the kitchen. Sandra went to the office. Daniel went back to the garden. Where is Sandra? In the"
+        '''
+        question_suffix = 'In the'
+        prompt = ''.join([q + ' ' + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)])
+
+    # none [only for XSum]:
+    elif prompt_mode == 'none':
+        '''
+         In this case, we use the raw k examples without any additional formatting. 
+         That is, we just concatenate [x1; y1; ...; xk; yk; x*] with a space between each element (but no space at the end), 
+         where x* is the input that we want to generate an answer for. 
+         
+         Example: 
+            "Sandra travelled to the kitchen. John went to the office. Where is Sandra? kitchen \
+            Sandra went to the office. Daniel went back to the garden. Where is Sandra?"
+        '''
+        question_suffix = ''
+        prompt = ''.join([q + ' ' + question_suffix + ' ' + a + ' ' for q, a in zip(x_inputs, x_labels)])
+
+    # tldr [only for XSum]:
+    elif prompt_mode == 'tldr':
+        '''
+        a. Add the text " TL;DR: " after each article/input (including the final test article) and before the summary/target. 
+        b. Add ".":
+           In addition, add a period after the answer. 
+        c. Add " ":
+            Be sure to include a space between the question and TL;DR:, as well as a space before the answer (though keep in mind Note 1!). 
+        
+        Example: 
+            "Sandra travelled to the kitchen. John went to the office. Where is Sandra? TL;DR: kitchen. \
+            Sandra went to the office. Daniel went back to the garden. Where is Sandra? TL;DR:"
+        '''
+        question_suffix = 'TL;DR:'
+        prompt = ''.join([q + ' ' + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)])
+
+    # custom [only for XSum]: Come up with your own prompt format for article summarization (different from the ones we’ve shown!).
+    elif prompt_mode == 'custom':
+        '''
+        Come up with your own prompt format for article summarization (different from the ones we’ve shown!).
+        '''
+        question_suffix = ':'
+        prompt = ''.join([q + ' ' + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)])
+
+    prompt += test_input + ' ' + question_suffix
+
     ### END CODE HERE ###
 
     return prompt
@@ -110,7 +184,7 @@ def do_sample(model, input_ids, stop_tokens, max_tokens):
         input_ids: An integer tensor of shape [1, prefix_len]
         stop_tokens: A list of token ids that indicates that we should stop sampling (e.g., a period)
         max_tokens: Stop sampling if we've sampled this many tokens
-    
+
     Returns:
         The sampled tokens (a python list of ints/zero-dim tensors), not including the input_ids prefix
           OR the stop token (if we hit the stop token before max_tokens)
@@ -134,7 +208,7 @@ def run_icl(models: List[str], datasets_: List[str], ks: List[int], prompt_modes
         utils.fix_random_seeds()
 
         model, tokenizer = utils.get_model_and_tokenizer(model_name, transformers.AutoModelForCausalLM)
-                
+
         stop_tokens = utils.stop_tokens(tokenizer)
         model.to(DEVICE)
 
@@ -142,9 +216,9 @@ def run_icl(models: List[str], datasets_: List[str], ks: List[int], prompt_modes
             print(f'Loading dataset {dataset}...')
             if debug:
                 n_val = 1
-            
+
             utils.fix_random_seeds()
-            
+
             max_tokens = utils.max_sampled_tokens_for_dataset(dataset)
             train, val = utils.get_dataset(dataset, n_train=max(ks), n_val=n_val)
             for prompt_mode in prompt_modes:
@@ -219,7 +293,7 @@ def plot_icl(models, dataset, ks, prompt_modes, output):
 
     if max(x_vals) > 4:
         plt.xscale('symlog')
-    
+
     ax = plt.gca()
     ax.xaxis.set_major_formatter(mticker.ScalarFormatter())
     ax.xaxis.set_ticks(v['x'])
