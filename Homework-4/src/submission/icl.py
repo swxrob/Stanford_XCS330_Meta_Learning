@@ -65,6 +65,7 @@ def get_icl_prompts(
     x_inputs = np.array(support_inputs)[idx].tolist()
     x_labels = np.array(support_labels)[idx].tolist()
 
+    # TODO: rid ourselves of this ugly hack to ensure we have actual lists for randomized Support Input and Labels
     if len(support_inputs) == 1:
         x_inputs = [x_inputs]
         x_labels = [x_labels]
@@ -90,8 +91,8 @@ def get_icl_prompts(
             "Sandra travelled to the kitchen. John went to the office. Where is Sandra? \
             In the kitchen. Sandra went to the office. Daniel went back to the garden. Where is Sandra? In the"
         '''
-        question_suffix = 'In the'
-        prompt = ''.join([q + ' ' + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)])
+        question_suffix = ' In the'
+        prompt_list = [q + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)]
 
     # none [only for XSum]:
     elif prompt_mode == 'none':
@@ -104,8 +105,8 @@ def get_icl_prompts(
             "Sandra travelled to the kitchen. John went to the office. Where is Sandra? kitchen \
             Sandra went to the office. Daniel went back to the garden. Where is Sandra?"
         '''
-        question_suffix = ''
-        prompt = ''.join([q + ' ' + question_suffix + ' ' + a + ' ' for q, a in zip(x_inputs, x_labels)])
+        question_suffix = ' '
+        prompt_list = [q + question_suffix + a + ' ' for q, a in zip(x_inputs, x_labels)]
 
     # tldr [only for XSum]:
     elif prompt_mode == 'tldr':
@@ -120,18 +121,25 @@ def get_icl_prompts(
             "Sandra travelled to the kitchen. John went to the office. Where is Sandra? TL;DR: kitchen. \
             Sandra went to the office. Daniel went back to the garden. Where is Sandra? TL;DR:"
         '''
-        question_suffix = 'TL;DR:'
-        prompt = ''.join([q + ' ' + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)])
+        question_suffix = ' TL;DR:'
+        prompt_list = [q + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)]
 
     # custom [only for XSum]: Come up with your own prompt format for article summarization (different from the ones we’ve shown!).
     elif prompt_mode == 'custom':
         '''
         Come up with your own prompt format for article summarization (different from the ones we’ve shown!).
         '''
-        question_suffix = ':'
-        prompt = ''.join([q + ' ' + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)])
+        question_suffix = ' :'
+        prompt_list = [q + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)]
 
-    prompt += test_input + ' ' + question_suffix
+    # Glue the prompt list together:
+    prompt = ''.join(prompt_list)
+
+    # Add the Test prompt
+    prompt += test_input + question_suffix
+
+    # Chop off extra space in the case of 'none'
+    if prompt_mode == 'none': prompt = prompt[:-1]
 
     ### END CODE HERE ###
 
