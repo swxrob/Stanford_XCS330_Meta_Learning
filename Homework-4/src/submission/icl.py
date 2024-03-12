@@ -209,8 +209,11 @@ def do_sample(model, input_ids, stop_tokens, max_tokens):
             logits = model(prefix).logits
             # Most probable sampled token is maximum logit
             token = logits.argmax()
-            if token not in stop_tokens:
-                sampled_tokens.append(token)
+            # Stop at hitting any entry in stop_token
+            if token in stop_tokens:
+                break
+            # Save token sampled from model
+            sampled_tokens.append(token)
 
     ### END CODE HERE ###
 
