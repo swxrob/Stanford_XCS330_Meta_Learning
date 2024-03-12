@@ -201,7 +201,17 @@ def do_sample(model, input_ids, stop_tokens, max_tokens):
     sampled_tokens = []
 
     ### START CODE HERE ###
-    pass
+    with torch.inference_mode():
+        for i_sample in range(max_tokens):
+            # Prepare 'prefix' as a single tensor list: figured this out by lots of trial and error
+            prefix = torch.tensor([input_ids.squeeze()[i_sample].item()])
+            # Sample model on prefix to get probabilities for each sampled token
+            logits = model(prefix).logits
+            # Most probable sampled token is maximum logit
+            token = logits.argmax()
+            if token not in stop_tokens:
+                sampled_tokens.append(token)
+
     ### END CODE HERE ###
 
     return sampled_tokens
