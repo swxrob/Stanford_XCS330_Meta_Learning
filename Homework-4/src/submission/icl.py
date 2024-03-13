@@ -129,6 +129,7 @@ def get_icl_prompts(
         '''
         Come up with your own prompt format for article summarization (different from the ones we’ve shown!).
         '''
+        # TODO: Just try something simple first. We'll come back here later and try more complex delimeters
         question_suffix = ' :'
         prompt_list = [q + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)]
 
@@ -201,15 +202,29 @@ def do_sample(model, input_ids, stop_tokens, max_tokens):
     sampled_tokens = []
 
     ### START CODE HERE ###
+    '''
+    Implement Greedy Sampling:
+    a. ‘Greedy’ sampling means that given a context x<t producing a distribution over next tokens pθ(xt | x<t),
+       we deterministically choose the next token xt to be the token with highest probability.
+    b. Don't use model.generate; implement this yourself in a loop
+       Stop at max tokens or a stop token
+    c. When calling the model here, be sure to wrap the call with torch.inference_mode() to save memory!
+    d. Note 3: Be sure you understand what each dimension of the model’s output logits represents. 
+       Misinterpreting the dimensions of this output can lead to subtle bugs.
+    '''
+
+    # c. Save memory: Use torch.inference_mode()
     with torch.inference_mode():
+        # b. Loop until seeing a stop token or max tokens
         for i_sample in range(max_tokens):
             # Prepare 'prefix' as a single tensor list: figured this out by lots of trial and error
             prefix = torch.tensor([input_ids.squeeze()[i_sample].item()])
             # Sample model on prefix to get probabilities for each sampled token
+            #     Logits is dimensioned as [1,Tokens] ([1,50257] in the case of test 2a-2-basic)
             logits = model(prefix).logits
-            # Most probable sampled token is maximum logit
+            # a. Greedy: Most probable sampled token is token with highest (unnormalized log) probability
             token = logits.argmax()
-            # Stop at hitting any entry in stop_token
+            # b. Stop at hitting any entry in stop_token
             if token in stop_tokens:
                 break
             # Save token sampled from model
