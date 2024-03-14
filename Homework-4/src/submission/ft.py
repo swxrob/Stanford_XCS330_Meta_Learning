@@ -79,20 +79,30 @@ def parameters_to_fine_tune(model: nn.Module, mode: str) -> List:
 
     if mode == 'all':
         ### START CODE HERE ###
-        my_name = 'parameters_to_fine_tune:mode=all:'
         return model.parameters()
         ### END CODE HERE ###
     elif mode == 'last':
         ### START CODE HERE ###
-        pass
+        '''
+        Last 2 Transformer Blocks
+        We can access the transformer blocks using model.transformer.h
+        '''
+        return [p for p in model.transformer.h[-2:].parameters()]
         ### END CODE HERE ###
     elif mode == 'first':
         ### START CODE HERE ###
-        pass
+        '''
+        First 2 Transformer Blocks
+        '''
+        return [p for p in model.transformer.h[:2].parameters()]
         ### END CODE HERE ###
     elif mode == 'middle':
         ### START CODE HERE ###
-        pass
+        '''
+        Middle 2 Transformer Blocks
+        There are 24 Transformer Blocks in total
+        '''
+        return [p for p in model.transformer.h[11:13].parameters()]
         ### END CODE HERE ###
     elif mode.startswith('lora'):
         ### START CODE HERE ###

@@ -58,8 +58,6 @@ def get_icl_prompts(
     prompt = ''
 
     ### START CODE HERE ###
-    # support_inputs = 2*support_inputs
-    # support_labels = 2*support_labels
 
     idx = np.random.permutation(len(support_inputs)).squeeze()
     x_inputs = np.array(support_inputs)[idx].tolist()
@@ -204,31 +202,40 @@ def do_sample(model, input_ids, stop_tokens, max_tokens):
     ### START CODE HERE ###
     '''
     Implement Greedy Sampling:
-    a. ‘Greedy’ sampling means that given a context x<t producing a distribution over next tokens pθ(xt | x<t),
-       we deterministically choose the next token xt to be the token with highest probability.
+    a. When calling the model here, be sure to wrap the call with torch.inference_mode() to save memory!
     b. Don't use model.generate; implement this yourself in a loop
-       Stop at max tokens or a stop token
-    c. When calling the model here, be sure to wrap the call with torch.inference_mode() to save memory!
-    d. Note 3: Be sure you understand what each dimension of the model’s output logits represents. 
+    c. Note 3: Be sure you understand what each dimension of the model’s output logits represents. 
        Misinterpreting the dimensions of this output can lead to subtle bugs.
+    d. ‘Greedy’ sampling means that given a context x<t producing a distribution over next tokens pθ(xt | x<t),
+       we deterministically choose the next token xt to be the token with highest probability.
+    e. Stop at max tokens or a stop token
     '''
 
-    # c. Save memory: Use torch.inference_mode()
+    # a. Save memory: Use torch.inference_mode()
     with torch.inference_mode():
+
         # b. Loop until seeing a stop token or max tokens
         for i_sample in range(max_tokens):
-            # Prepare 'prefix' as a single tensor list: figured this out by lots of trial and error
-            prefix = torch.tensor([input_ids.squeeze()[i_sample].item()])
-            # Sample model on prefix to get probabilities for each sampled token
-            #     Logits is dimensioned as [1,Tokens] ([1,50257] in the case of test 2a-2-basic)
-            logits = model(prefix).logits
-            # a. Greedy: Most probable sampled token is token with highest (unnormalized log) probability
-            token = logits.argmax()
-            # b. Stop at hitting any entry in stop_token
+
+            # Run full prefix / prompt through the LLM
+            #     Sample model on prefix to get probabilities for each sampled token
+            #     c. Logits is dimensioned as [1, Num input_ids, tokens]
+            logits = model(input_ids).logits
+
+            # d. Grab the last new generated token
+            #    Greedy: Most probable sampled token is token with highest (unnormalized log) probability
+            token = logits.squeeze()[-1,:].argmax(-1)
+
+            # e. Stop at hitting any entry in stop_token
             if token in stop_tokens:
                 break
             # Save token sampled from model
             sampled_tokens.append(token)
+
+            # Append token to input_idx
+            token_shaped_for_concat = token.unsqueeze(0).unsqueeze(0)
+            input_ids = torch.concat([input_ids, token_shaped_for_concat], dim=1)
+
 
     ### END CODE HERE ###
 
@@ -288,7 +295,29 @@ def run_icl(models: List[str], datasets_: List[str], ks: List[int], prompt_modes
                             decoded_prediction = ''
 
                             ### START CODE HERE ###
-                            pass
+
+                            '''
+                            Steps:
+                            a. Get prompt (ASCII text)
+                            b. Encode prompt to tokens (integer ids) on proper device
+                            c. Sample model
+                            d. Decode model output tokens back to text
+                            '''
+
+                            # a. Get prompts
+                            prompt = get_icl_prompts(support_inputs=support_x, support_labels=support_y, test_input=test_input, prompt_mode=prompt_mode)
+
+                            # b. Encode prompt (ASCII string) to tokens (integers) on proper device
+                            #    Looking at the HuggingFace docs, we can directly return PyTorch tensors
+                            #    https://huggingface.co/docs/transformers/v4.23.1/en/main_classes/tokenizer#transformers.PreTrainedTokenizer.__call__
+                            input_ids = tokenizer.encode(prompt, return_tensors='pt').to(DEVICE)
+
+                            # c. Sample Model
+                            sampled_tokens = do_sample(model, input_ids, stop_tokens, max_tokens)
+
+                            # d. Decode model output tokens back to text
+                            decoded_prediction = tokenizer.decode(sampled_tokens)
+
                             ### END CODE HERE ###
 
                             predictions.append(decoded_prediction)
