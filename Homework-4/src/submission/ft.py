@@ -47,7 +47,41 @@ class LoRAConv1DWrapper(nn.Module):
         self.lora_A, self.lora_B = None, None
         
         ### START CODE HERE ###
-        pass
+
+        '''
+        BACKGROUND:
+        Pre-trained Weight matrix:
+            W_ℓ^0 ∈ R^d1×d2
+            
+        Constraining the fine-tuning using LoRA Parameters, such that:
+            W_ℓ^ft = W_ℓ^0 + AB^⊤
+        where,
+            A = Normal(0,sigma^2) of shape: A ∈ R^d1×p
+            B = 0's of shape: B ∈ R^d2×p
+            p = LoRA rank
+
+        From Figure 1 of the LoRA paper:
+            "We use a random Gaussian initialization for A and zero for B, so ∆W = BA is zero at the beginning of training"
+            https://arxiv.org/pdf/2106.09685.pdf
+            
+        STEPS:
+        a. Freeze pre-trained weighths: W_ℓ^0
+        b. Create LoRA A matrix
+        c. Create LoRA B matrix
+        '''
+
+        d1 = self.base_module.weight.shape[0]
+        d2 = self.base_module.weight.shape[1]
+
+        # a. Freeze pre-trained Weight matrix
+        self.base_module.requires_grad_(False)
+
+        # b. Setup LoRA A matrix
+        self.lora_A = nn.Parameter(torch.randn((d1,lora_rank)))
+
+        # c. Setup LoRA B matrix as shape B ∈ R^d2×p
+        self.lora_B = nn.Parameter(torch.zeros(d2,lora_rank))
+
         ### END CODE HERE ###
 
 
@@ -59,7 +93,7 @@ class LoRAConv1DWrapper(nn.Module):
         ###
         #############################
         ### START CODE HERE ###
-        pass
+        print(x)
         ### END CODE HERE ###
 
 
