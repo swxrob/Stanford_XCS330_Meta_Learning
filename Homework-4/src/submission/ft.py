@@ -97,7 +97,8 @@ class LoRAConv1DWrapper(nn.Module):
         # a. Update Weights
         #    Noting that matrix multiplication is associative, weight LoRA Fine-tuned is now:
         #        = W0 + AB^T
-        W_l_ft = self.base_module.weight + torch.matmul(self.lora_A, self.lora_B.T)
+        #    Here is our LoRA residual weight matrix:
+        AB_T = torch.matmul(self.lora_A, self.lora_B.T)
 
         # b. Forward pass
         #    From the LoRA paper, the modified forward pass looks like:
@@ -105,16 +106,13 @@ class LoRAConv1DWrapper(nn.Module):
         #    In testing,
         #        W0 is shape [1024, 4096]
         #        x is shape [1, 111, 1024]
-        h = torch.matmul(W_l_ft.T, x.squeeze().T)
+        h_residual = torch.matmul(AB_T.T, x.squeeze().T)
         # Transpose to match the shape expected from a call to self.base_model(x)
-        h = h.T
-        # Finally complete the forward pass by adding the model bias:
-        y = h + self.base_module.bias
+        h_residual = h_residual.T
         # Add back the fake leading dimension to match the shape expected from a call to self.base_model(x)
-        y = y.unsqueeze(dim=0)
-
-        # Other attempt
-        y = self.base_module(x) + torch.matmul(torch.matmul(self.lora_A, self.lora_B.T).T, x.squeeze().T).T.unsqueeze(dim=0)
+        h_residual = h_residual.unsqueeze(dim=0)
+        # Finally complete the forward pass by adding the residual matrix AB^T * x contribution to the frozen pre-trained model
+        y = self.base_module(x) + h_residual
         return y
 
         ### END CODE HERE ###
