@@ -203,6 +203,13 @@ def get_loss(logits: torch.tensor, targets: torch.tensor) -> torch.tensor:
     elif logits.dim() == 3:
         ### START CODE HERE ###
         pass
+
+        '''
+        Hints:
+        Slack: https://xcs330-scpd.slack.com/archives/C06DS0WFPNK/p1710455468134899?thread_ts=1710449283.534319&cid=C06DS0WFPNK
+        - you would need to extract the proper data from the logits and targets, where logits[1] is associated to targets[0], 
+          logits[2] - targets[1] and so on
+        '''
         #logits = logits.view(-1, logits.size(-1))
         ### END CODE HERE ###
     else:
@@ -344,7 +351,66 @@ def tokenize_gpt2_batch(tokenizer, x, y):
     tokenized_sequences = None
 
     ### START CODE HERE ###
-    pass
+    '''
+    Background / Hints / Tips:
+
+    Pseudocode from CF:
+    Slack: https://xcs330-scpd.slack.com/archives/C06DS0WFPNK/p1708591793694449?thread_ts=1708227370.953109&cid=C06DS0WFPNK
+    - you tokenize the sequences, in the form of x+y
+    - you tokenize x's and y's separately and take the input_ids
+    - you take the input_ids of the x+y sequences and you prepare the labels on the retuned tokenized x+y sequences, 
+      as a clone of the x+y input_ids, by overwriting -100 for the length of the tokenized x sequence and -100 after 
+      the length of the tokenized x+y sequences
+    
+    More Hints:
+    Slack: https://xcs330-scpd.slack.com/archives/C06DS0WFPNK/p1709183654071419?thread_ts=1709162507.414569&cid=C06DS0WFPNK
+    - If you use the dictionary you get as output from the tokenizer (like in the docstring example), it will be a transformer-type dictionary which can be put on device.
+    Slack: https://xcs330-scpd.slack.com/archives/C06DS0WFPNK/p1709183301626439?thread_ts=1709175186.480049&cid=C06DS0WFPNK    
+    - For input_ids, you need to also append the y label after the tokenized x (see the example). If you try testing your code with the example in the docstring, you’ll notice you have padding tokens for the last 3 elements of the first input_ids row when it should be the 3 elements of the y label. Same issue for attention mask (it should mask both x and y of input_ids).
+    - One thing I noted is that to pass the test, you MUST clone input id's into labels first, and 
+      then apply the -100 mask to x and padding tokens. Otherwise, if you apply -100 to the whole x y sequence first, 
+      and then map over the input_ids for y tokens it will fail the test (even though the final tokenized_sequences['labels'] 
+      dictionary will be correct exactly as in the example. this just seems to be because the hidden test checks the "labels" 
+      variable early, rather than at the end as part of the whole dictionary.
+    '''
+
+    '''
+    Step 1. Tokenize sequences in form of x+y (i.e. list concatenaion)
+    
+    Hints / Tricks:
+    a. Use the zip trick shown above.
+    '''
+    tokenized_sequences = tokenizer([x_ + y_ for x_, y_ in zip(x, y)], return_tensors='pt', padding=True)
+
+    '''
+    Step 2. Prepare the Labels    
+    
+    Substeps:
+    a. Clone: Prepare the labels on the retuned tokenized x+y sequences, as a clone of the x+y input_ids.
+    b. -100: Overwrite this clone for the length of the tokenized x sequence and -100 after the length of the 
+       tokenized x+y sequences.
+    '''
+    # a. Clone
+    labels = tokenized_sequences['input_ids'].clone()
+
+    # b. For each Batch (B): Replace x's and >len([x,y]) with -100
+    B = len(x)
+    mask = -100
+    # Use non-padded versions of the tokenizing of 'x' and 'y' to figure out the mask indices
+    tok_x = tokenizer(x)
+    tok_y = tokenizer(y)
+    # For each Batch
+    for ib in range(B):
+        # Replace tokenized input prefix 'x' with mask
+        len_x = len(tok_x['input_ids'][ib])
+        labels[ib][:len_x] = mask
+        # Replace padding after tokenized [x,y] with mask, leaving only 'y' tokens unmasked
+        len_y = len(tok_y['input_ids'][ib])
+        labels[ib][len_x + len_y:] = mask
+
+    # c. Add to dictionary
+    tokenized_sequences['labels'] = labels
+
     ### END CODE HERE ###
     
     return tokenized_sequences.to(DEVICE)
