@@ -156,7 +156,16 @@ def parameters_to_fine_tune(model: nn.Module, mode: str) -> List:
         ### END CODE HERE ###
     elif mode.startswith('lora'):
         ### START CODE HERE ###
-        pass
+        '''
+        # Hint: consider using the
+        # .modules() function of nn.Module and checking for modules that are an instance of LoRAConv1DWrapper.
+        '''
+        # List comprehension w/if condition: [f(x) for x in sequence if condition]
+        params = [[m.lora_A, m.lora_B] for m in nn.Module.modules(model) if isinstance(m, LoRAConv1DWrapper)]
+        # Flatten list of lora_A and lora_B pairs: [[lora_A, lora_B],[],...]
+        params = [m for ab_pair in params for m in ab_pair]
+
+        return(params)
         ### END CODE HERE ###
     else:
         raise NotImplementedError()
