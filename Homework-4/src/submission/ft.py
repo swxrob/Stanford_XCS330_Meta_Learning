@@ -522,14 +522,16 @@ def ft_gpt2(model, tok, x, y, mode, dataset, batch_size=8, grad_accum=8):
             logits = output['logits']
             loss = get_loss(logits, tokenized_sequences['labels'])
 
-            # 4. Backpropagate the loss (divided by the grad_accum parameter)
-            # FIXME: What does it mean to "loss (divide by the grad_accum parameter)"?
-            (loss / grad_accum).backward()
+        # 4. Backpropagate the loss (divided by the grad_accum parameter)
+        # FIXME: Is this the correct interpretation of "loss (divide by the grad_accum parameter)"?
+        (loss / grad_accum).backward()
 
         # 5. Take a step of the optimizer and zero the model gradients ***only every grad_accum steps***
-        #    Be careful that you don't take a step after the very first backward pass (i.e., when step == 0)
-        optimizer.step()
-        optimizer.zero_grad()
+        #    Be careful that you don't take a step after the very first backward pass (i.e., when step == 0).
+        #    Thus the "step != 0" check before the modulus.
+        if (step != 0) and (step % grad_accum == 0):
+            optimizer.step()
+            optimizer.zero_grad()
 
         ### END CODE HERE ###
 
