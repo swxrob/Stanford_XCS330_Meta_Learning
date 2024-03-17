@@ -202,15 +202,30 @@ def get_loss(logits: torch.tensor, targets: torch.tensor) -> torch.tensor:
         ### END CODE HERE ###
     elif logits.dim() == 3:
         ### START CODE HERE ###
-        pass
-
         '''
         Hints:
         Slack: https://xcs330-scpd.slack.com/archives/C06DS0WFPNK/p1710455468134899?thread_ts=1710449283.534319&cid=C06DS0WFPNK
         - you would need to extract the proper data from the logits and targets, where logits[1] is associated to targets[0], 
           logits[2] - targets[1] and so on
+          
+        Steps:
+        a. Off-by-One: There is an off-by-one shift needed between the logits and targets.
+           According to Slack CF: "logits[1] is associated to targets[0], logits[2] - targets[1] and so on"
+           BUT, I think this is wrong and should be logits[t] is associated to targets[t+1]. Empirically in my testing, this is true.
+        b. Swap Axes: Cross Entropy Loss (F.cross_entropy() requires logits on axis 1) -- use torch.swapaxes() from 2 to 1.
+           Slack: https://xcs330-scpd.slack.com/archives/C06DS0WFPNK/p1708283059322529?thread_ts=1708235461.768469&cid=C06DS0WFPNK
+        c. Non-Masked: Only compute loss on unmasked targets, using the ignore_index parameter.
         '''
-        #logits = logits.view(-1, logits.size(-1))
+
+        # a. Off-by-One
+        #    logits[t] maps to targets[t+1]
+        # b. Swap Axes
+        _logits = torch.swapaxes(logits[:, :-1], axis0=2, axis1=1)
+        _targets = targets[:, 1:]
+
+        # c. Non-Masked
+        mask = -100
+        loss = F.cross_entropy(input=_logits, target=_targets, ignore_index=mask)
         ### END CODE HERE ###
     else:
         raise ValueError(f'Logits should either be 2-dim (for classification) or 3-dim (for generation); got {logits.dim()}')
@@ -243,10 +258,13 @@ def get_acc(logits, targets):
 
     if logits.dim() == 2:
         ### START CODE HERE ###
-        # Method: match maximum value across classes (argmax), convert Boolean to float and take the mean.
-        # One-liner:
-        #     acc = (torch.argmax(logits, dim=-1) == targets).float().mean().item()
-        # Replaced with the following since the Slack conversation indicated we might have some environment sensitivity / round off error propogation:
+        '''
+        Method: match maximum value across classes (argmax), convert Boolean to float and take the mean.
+        One-liner:
+            acc = (torch.argmax(logits, dim=-1) == targets).float().mean().item()
+        Replaced with the following since the Slack conversation indicated we might have some environment sensitivity / round off error propogation:
+            Note that F.softmax should not be needed--just used it here to attempt to reduce round-off error.
+        '''
         B = logits.shape[0]
         logits_normalized = F.softmax(logits, dim=-1)
         acc_bool = (torch.argmax(logits_normalized, dim=-1) == targets)
@@ -255,7 +273,28 @@ def get_acc(logits, targets):
         ### END CODE HERE ###
     elif logits.dim() == 3:
         ### START CODE HERE ###
-        pass
+        '''
+        Logits: [batch_size, sequence_length, vocab_size]
+        Targets: [batch_size, sequence_length] tensor of target indices. 
+            May contain -100 in some positions, meaning that the loss for this timestep should be ignored.
+
+        a. Predicted: Predicted tokens are simply the vocabulary token with the maximum unnormalized log probability (aka logit)            
+        a. Non-Masked: The average accuracy is the average accuracy over all non-masked timesteps.
+        b. Off-by-One: There is an off-by-one shift needed between the logits and targets.
+           According to Slack CF: "logits[1] is associated to targets[0], logits[2] - targets[1] and so on"
+           BUT, I think this is wrong and should be logits[t] is associated to targets[t+1]. Empirically in my testing, this is true.
+        '''
+        # a. Predicted tokens as maximum logit over the vocabulary
+        predicts = logits.argmax(dim=-1)
+
+        # b. Non-masked: Average only over not masked entries
+        mask = -100
+        n_not_masked = (targets[:,1:] != mask).sum()
+
+        # c. Off-by-One: predicts[i] maps to targets[i+1]
+        acc = (predicts[:, :-1] == targets[:, 1:]).sum() / n_not_masked
+
+        return acc
         ### END CODE HERE ###
     else:
         raise ValueError(f'Logits should either be 2-dim (for classification) or 3-dim (for generation); got {logits.dim()}')
@@ -468,7 +507,30 @@ def ft_gpt2(model, tok, x, y, mode, dataset, batch_size=8, grad_accum=8):
         # Note: the ** operator will unpack a dictionary into keyword arguments to a function (such as your model)
         #############################
         ### START CODE HERE ###
-        pass
+
+        # 1. Sample a random minibatch
+        for b_idx in batch_idxs:
+            _x = [x[b_idx]]
+            _y = [y[b_idx]]
+
+            # 2. Tokenize the Batch
+            tokenized_sequences = tokenize_gpt2_batch(tok, _x, _y)
+
+            # 3. Run model and compute Loss
+            #    Note: the ** operator will unpack a dictionary into keyword arguments to a function (such as your model)
+            output = model(**tokenized_sequences, use_cache=False)
+            logits = output['logits']
+            loss = get_loss(logits, tokenized_sequences['labels'])
+
+            # 4. Backpropagate the loss (divided by the grad_accum parameter)
+            # FIXME: What does it mean to "loss (divide by the grad_accum parameter)"?
+            (loss / grad_accum).backward()
+
+        # 5. Take a step of the optimizer and zero the model gradients ***only every grad_accum steps***
+        #    Be careful that you don't take a step after the very first backward pass (i.e., when step == 0)
+        optimizer.step()
+        optimizer.zero_grad()
+
         ### END CODE HERE ###
 
         if step % (grad_accum * 5) == 0:
