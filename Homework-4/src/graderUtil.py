@@ -29,7 +29,7 @@ class graded():
                leaderboard_sort_order='desc',
                is_hidden = False,
                is_extra_credit = False,
-               timeout = 5,
+               timeout = 86400,
                after_published = False,
                hide_errors = False,
                student_feedback=None):

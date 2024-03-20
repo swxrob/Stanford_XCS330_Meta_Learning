@@ -54,7 +54,7 @@ class Test_1a(GradedTestCase):
         # Check that the number of parameters to be optimized match
         self.assertTrue(len(parameters) == 42, "Incorrect number of parameters to be optimized returned by parameters_to_fine_tune ! Please follow all requirements outlined in the function comments and the writeup.")
 
-    @graded(timeout=10, is_hidden=True)
+    @graded(timeout=8600, is_hidden=True)
     def test_1(self):
         """1a-1-hidden: Hidden test case for testing the loss and accuracy for 2D inputs."""
 
@@ -139,7 +139,7 @@ class Test_2a(GradedTestCase):
           9529,   259,   420, 27498,   547,  2923,   416,   745, 17892,  1201,
           3269,   428,   614,    13]])
 
-    @graded(timeout=1)
+    @graded(timeout=86400)
     def test_0(self):
         """2a-0-basic: Basic test case for checking your own prompt format is different from the ones we have shown."""
 
@@ -207,7 +207,7 @@ class Test_2a(GradedTestCase):
         self.assertTrue(prompt_none == sol_prompt_none, "`none` prompt not matching! Please follow all requirements outlined in the function comments and the writeup.")  
         self.assertTrue(prompt_tldr == sol_prompt_tldr, "`tldr` prompt not matching! Please follow all requirements outlined in the function comments and the writeup.")  
 
-    @graded(timeout=30)
+    @graded(timeout=86400)
     def test_2(self):
         """2a-2-basic: Basic test case for checking that do_sample does not include the input_ids prefix OR the stop token."""
 
@@ -227,7 +227,7 @@ class Test_2a(GradedTestCase):
         # Check that we sampled at most max_tokens tokens
         self.assertTrue(len(sampled_tokens) > 0 and len(sampled_tokens) <= max_tokens, f"do_sample should at most sample {max_tokens} tokens! Please follow all requirements outlined in the function comments and the writeup.")  
 
-    @graded(timeout=60, is_hidden=True)
+    @graded(timeout=86400, is_hidden=True)
     def test_3(self):
         """2a-3-hidden: Hidden test case for checking that do_sample generate tokens match."""
 
@@ -313,7 +313,7 @@ class Test_3a(GradedTestCase):
         self.sol_parameters_to_fine_tune = self.run_with_solution_if_possible(submission, lambda sub_or_sol:sub_or_sol.parameters_to_fine_tune)
 
 
-    @graded(timeout=10)
+    @graded(timeout=86400)
     def test_0(self):
         """3a-0-basic: Basic test case for testing the parameters to fine tune in mode 'last', 'first' and 'middle'."""
         
@@ -338,7 +338,7 @@ class Test_3a(GradedTestCase):
         )
 
 
-    @graded(timeout=10, is_hidden=True)
+    @graded(timeout=86400, is_hidden=True)
     def test_1(self):
         """3a-1-hidden: Hidden test case for testing the parameters to fine tune in mode 'last', 'first' and 'middle' are the ones expected."""
 
@@ -393,7 +393,7 @@ class Test_3c(GradedTestCase):
         self.get_loss = submission.get_loss
         self.sol_get_loss = self.run_with_solution_if_possible(submission, lambda sub_or_sol:sub_or_sol.get_loss)
 
-    @graded(timeout=10)
+    @graded(timeout=86400)
     def test_0(self):
         """3c-0-basic: Basic test case for checking the internal parameters of LoRAConv1DWrapper."""
         
@@ -426,7 +426,7 @@ class Test_3c(GradedTestCase):
             "As per the LoRA paper, the pretrained model weights should be frozen! Please follow all requirements outlined in the function comments and the writeup."
         )
 
-    @graded(timeout=10, is_hidden=True)
+    @graded(timeout=86400, is_hidden=True)
     def test_1(self):
         """3c-1-hidden: Hidden test case for further checks on the internal parameters of LoRAConv1DWrapper."""
         
@@ -441,7 +441,7 @@ class Test_3c(GradedTestCase):
         ### END_HIDE ###
 
 
-    @graded(timeout=10, is_hidden=True)
+    @graded(timeout=86400, is_hidden=True)
     def test_2(self):
         """3c-2-hidden: Hidden test case for checking the forward method of LoRAConv1DWrapper."""
         
@@ -465,7 +465,7 @@ class Test_3c(GradedTestCase):
         )
 
 
-    @graded(timeout=10)
+    @graded(timeout=86400)
     def test_3(self):
         """3c-3-basic:  Basic test case for testing the parameters to fine tune in mode 'loraN'."""
         
@@ -485,7 +485,7 @@ class Test_3c(GradedTestCase):
             "Incorrect number of parameters to be optimized returned by parameters_to_fine_tune for `lora` mode! Please follow all requirements outlined in the function comments and the writeup."
         )
 
-    @graded(timeout=10)
+    @graded(timeout=86400)
     def test_4(self):
         """3c-4-basic: Basic test case for testing the tokenize_gpt2_batch outputs dimensions."""
 
@@ -512,7 +512,7 @@ class Test_3c(GradedTestCase):
         )
 
 
-    @graded(timeout=15, is_hidden=True)
+    @graded(timeout=86400, is_hidden=True)
     def test_5(self):
         """3c-5-hidden: Hidden test case for testing the tokenize_gpt2_batch outputs."""
 
@@ -540,7 +540,7 @@ class Test_3c(GradedTestCase):
             "Incorrect labels element of tokenize_gpt2_batch output! Please follow all requirements outlined in the function comments and the writeup."
         )
 
-    @graded(timeout=20, is_hidden=True)
+    @graded(timeout=86400, is_hidden=True)
     def test_6(self):
         """3c-6-hidden: Hidden test case for testing the loss and accuracy for 3D inputs."""
 
