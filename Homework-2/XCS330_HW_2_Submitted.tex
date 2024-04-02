@@ -1,0 +1,229 @@
+% This contents of this file will be inserted into the _Solutions version of the
+% output tex document.  Here's an example:
+
+% If assignment with subquestion (1.a) requires a written response, you will
+% find the following flag within this document: <SCPD_SUBMISSION_TAG>_1a
+% In this example, you would insert the LaTeX for your solution to (1.a) between
+% the <SCPD_SUBMISSION_TAG>_1a flags.  If you also constrain your answer between the
+% START_CODE_HERE and END_CODE_HERE flags, your LaTeX will be styled as a
+% solution within the final document.
+
+% Please do not use the '<SCPD_SUBMISSION_TAG>' character anywhere within your code.  As expected,
+% that will confuse the regular expressions we use to identify your solution.
+\def\assignmentnum{2 }
+\def\assignmenttitle{XCS330 Problem Set \assignmentnum}
+\input{macros}
+\begin{document}
+\pagestyle{myheadings} \markboth{}{\assignmenttitle}
+
+% <SCPD_SUBMISSION_TAG>_entire_submission
+
+This handout includes space for every question that requires a written response.
+Please feel free to use it to hand write your solutions (legibly, please).  If
+you choose to typeset your solutions, the |README.md| for this assignment includes
+instructions to regenerate this handout with your typeset \LaTeX{} solutions.
+\ruleskip
+
+\LARGE
+3.a [12 points (Coding)] [4 points (Written)] Train and Analysis
+\normalsize
+% <SCPD_SUBMISSION_TAG>_3a
+\begin{answer}
+
+    % ### START CODE HERE ###
+Once you have completed problems 1 and 2, you can train your few shot classification model. You should observe both the support and query losses go down, and the query accuracy go up. Now we will examine how the performance varies for different size problems. Train models for the following values of K and N:
+\\
+K = 1, N = 2; 
+K = 2, N = 2; 
+K = 1, N = 3; 
+K = 1, N = 4
+\\
+
+Example code:
+\begin{verbatim}
+    python main.py --num_shot K --num_classes N
+\end{verbatim}
+
+For checking training results and/or taking a screenshot for the writeup, use:
+\begin{verbatim}
+    tensorboard --logdir runs/
+\end{verbatim}
+\\
+
+You should start with the case K = 1, N = 2 as it can aid you in the implementation and debugging process.
+\\
+
+Your model should be able to achieve a query set accuracy of above 90\% in this first two scenarios scenario
+on held-out test tasks, around 80\% in the third scenario, and around 70\% in the final scenario.
+We have provided in Figure 3 a unified view of the meta-test query set classification accuracy over training
+iterations for all above mentioned configurations. Answer the following questions:
+\\
+
+\large
+(a) How does increasing the number of classes affect learning and performance?
+\normalsize
+\\
+
+Answer: Increasing the number of classes (N) decreases performance.
+
+Details: Looking at the figure below of the meta task Test accuracy and loss curves, we can easily see that increasing the number of classes (N) decreases accuracy in performance (left figure) on the task of predicting the Query image class labels, and correspondingly increases the losses (right figure).
+\\
+
+\includegraphics[width=1\linewidth]{Screenshot 2024-02-13 at 12.08.29 PM.png}
+\\
+Figure: MANN meta task test accuracy (left) and test loss (right) curves as a function of epoch colored as follows: 
+Black:  "K=1, N=2", 
+Blue:   "K=2, N=2"
+Red:    "K=1, N=3"
+Yellow: "K=1, N=4".
+(Chart settings: Smoothing was set to 75\% to easy synoptic interpretation. Ignore outliers in chart scaling = True.)
+
+    % ### END CODE HERE ###
+
+\end{answer}
+% <SCPD_SUBMISSION_TAG>_3a
+
+\clearpage
+
+\LARGE
+3.b How does increasing the number of examples in the support set affect performance?
+\normalsize
+
+% <SCPD_SUBMISSION_TAG>_3b
+\begin{answer}
+    % ### START CODE HERE ###
+
+\large
+
+\\
+Answer: Increasing Support examples (K) increases performance.
+\normalsize
+\\
+
+Details: Looking at the previous figure, specifically the N=2 classes scenarios (Black (K=1) and Blue (K=2) curves), we can see that adding additional Support Images and Labels (i.e. K) does improve accuracy in this particular experiment. So, we should expect that if we increase K further for the N>2 class cases, perhaps those accuracies (N=3,4) might be increased as well.
+
+    
+    % ### END CODE HERE ###
+\end{answer}
+% <SCPD_SUBMISSION_TAG>_3b
+
+\clearpage
+
+\LARGE
+4.a [3 points (Written, Extra Credit)] Experimentation
+\normalsize
+
+% <SCPD_SUBMISSION_TAG>_4a
+\begin{answer}
+    % ### START CODE HERE ###
+
+a. Experiment with one hyperparameter that affects the performance of the model, such as the type of
+recurrent layer, size of hidden state, learning rate, or number of layers and submit a plot of the loss and
+accuracy for train and test sets.
+Provide a brief rationale for why you chose the parameter and what you observed in the caption for the
+plot.
+\\
+
+Looking at main.py, the hyperparameters we have easy command line access to manipulate are (including their default values):
+\begin{verbatim}
+hidden_dim=128, learning_rate=0.001, train_steps=25000,
+\end{verbatim}
+\\
+
+Since we'll try LSTM memory representation in the subsequent exercise 4.b, let's try learning rate here as something easy to experiment with.
+\\
+Rational for Choice: Learning rate was chosen since it's always important to look at the computational cost per performance to train models (e.g. ecological footprint), and it was easy to experiment with.
+\\
+
+Observations: Unsurprisingly, the default learning rate (0.001) is a pretty good choice for balancing iterations needed to achieve greater than 90\% accuracy in task testing (middle-left plot). It would be interesting to increase the epochs to 50k and see if the slower learning rate captures more mutual information between the tasks and hence improved Training (right column) and Test (left 2 column) performance as the slowest rate clearly hasn't fully converged.
+\\
+
+
+Slow Learning Rate 0.0001 (default / 10):
+\\
+\includegraphics[width=0.70\linewidth]{Screenshot 2024-02-13 at 1.51.54 PM.png}
+\\
+Default Learning Rate 0.001 (default):
+\\
+\includegraphics[width=0.70\linewidth]{Screenshot 2024-02-13 at 1.57.08 PM.png}
+\\
+Fast Learning Rate 0.01 (default*10):
+\\
+\includegraphics[width=0.70\linewidth]{Screenshot 2024-02-13 at 2.02.56 PM.png}
+\\
+Figure: MANN meta task test accuracy (left), and test loss (middle), and training Loss (right) curves as a function of epoch. The figure rows top to bottom are the learning rates: slowest (top, lr=0.0001, default/10), default (middle, lr=0.001), and fastest (bottom, lr=0.01). 
+Smoothing was set to 75\% to easy synoptic interpretation.
+\\
+\\
+
+\large
+4.a Experimenting with another change: Adding random noise to the Query labels instead of simply 0's. 
+\normalsize
+Here we replace our zeroing out of the Query labels with labels drawn from a normal distribution (\mu=0, \sigma=1).
+
+Findings: No performance gain or loss is clearly observable. Perhaps another test to try would be to draw randomly from a permutation of possible integer class labels rather than real values.
+\\
+
+Query labels = Normal(\mu=0,\sigma=1):
+\\
+\includegraphics[width=1\linewidth]{Screenshot 2024-02-14 at 3.44.19 AM.png}
+\\
+
+Compared to Original (Query labels as 0's):
+\\
+\includegraphics[width=1\linewidth]{Screenshot 2024-02-13 at 12.08.29 PM.png}
+\\
+Figure: MANN meta task test accuracy (left) and test loss (right) curves as a function of epoch colored as follows: 
+Black:  "K=1, N=2", 
+Blue:   "K=2, N=2"
+Red:    "K=1, N=3"
+Yellow: "K=1, N=4".
+(Chart settings: Smoothing was set to 75\% to easy synoptic interpretation. Ignore outliers in chart scaling = True.)
+
+
+    % ### END CODE HERE ###
+\end{answer}
+% <SCPD_SUBMISSION_TAG>_4a
+
+\clearpage
+
+\LARGE
+4.b [3 points (Written, Extra Credit)] Experimentation
+\normalsize
+
+% <SCPD_SUBMISSION_TAG>_4b
+\begin{answer}
+    % ### START CODE HERE ###
+
+b. In this question we’ll explore the effect of memory representation on model performance.
+We will focus on the K = 1, N = 3 case.
+\\
+
+In the previous experiments we used an LSTM model with 128 units. Consider additional memory sizes
+of 256, and 8.
+\\
+
+How does increasing and decreasing the memory capacity influence performance?
+\\
+
+Answer: Increasing memory (8 vs. 128(default) vs. 256 LSTM units) increases accuracy. Note that increasing the number of memory units also increases the learning time needed (number of epochs) which is of course as expected, as the number of neural network parameters needing to learn have increased.
+\\
+
+\includegraphics[width=1\linewidth]{Screenshot 2024-02-13 at 12.36.20 PM.png}
+\\
+Figure: MANN meta task test accuracy (left) and test loss (right) curves as a function of epoch, for K=1 and N=3 and varying levels of LSTM memory representation (H). Curves are colored as follows: H=256 units (orange), H=128 units (red), H=8 units (green). Smoothing was set to 75\% to easy synoptic interpretation. Here "H" refers to the hidden dimension (aka "hidden\_dim") in our 2 layer LSTM network.
+\\
+\\
+
+And as a double check, we can see that our created figure looks as it should, compared to the problem set handout:
+\\
+
+\includegraphics[width=0.5\linewidth]{Screenshot 2024-02-13 at 12.27.11 PM.png}
+    
+    % ### END CODE HERE ###
+\end{answer}
+% <SCPD_SUBMISSION_TAG>_4b
+
+% <SCPD_SUBMISSION_TAG>_entire_submission
+
+\end{document}
