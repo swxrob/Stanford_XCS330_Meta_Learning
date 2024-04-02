@@ -77,7 +77,7 @@ class LoRAConv1DWrapper(nn.Module):
         self.base_module.requires_grad_(False)
 
         # b. Setup LoRA A matrix
-        self.lora_A = nn.Parameter(torch.randn((d1,lora_rank)))
+        self.lora_A = nn.Parameter(torch.zeros(d1,lora_rank))
         nn.init.kaiming_uniform_(self.lora_A)
 
         # c. Setup LoRA B matrix as shape B ∈ R^d2×p
