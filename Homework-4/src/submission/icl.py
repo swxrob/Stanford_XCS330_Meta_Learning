@@ -126,10 +126,27 @@ def get_icl_prompts(
     elif prompt_mode == 'custom':
         '''
         Come up with your own prompt format for article summarization (different from the ones we’ve shown!).
+        Lets combine the QA "In the" idea with the "TL;DR:" performance we've seen. 
+        Example: 
+            "Q:Sandra travelled to the kitchen. John went to the office. Where is Sandra? A:TL;DR:In the kitchen. \
+             Q:Sandra went to the office. Daniel went back to the garden. Where is Sandra? A:TL;DR:"
         '''
-        # TODO: Just try something simple first. We'll come back here later and try more complex delimeters
-        question_suffix = ' :'
-        prompt_list = [q + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)]
+        question_prefix = "Q:"
+        question_suffix = ' TL;DR:'
+        prompt_list = [question_prefix + q + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)]
+
+    # custom [only for XSum]: Come up with your own prompt format for article summarization (different from the ones we’ve shown!).
+    elif prompt_mode == 'custom_q_a_tldr_in_the':
+        '''
+        Come up with your own prompt format for article summarization (different from the ones we’ve shown!).
+        Lets combine the QA "In the" idea with the "TL;DR:" performance we've seen. 
+        Example: 
+            "Q:Sandra travelled to the kitchen. John went to the office. Where is Sandra? A:TL;DR:In the kitchen. \
+             Q:Sandra went to the office. Daniel went back to the garden. Where is Sandra? A:TL;DR:"
+        '''
+        question_prefix = "Q:"
+        question_suffix = ' A:TL;DR:In the'
+        prompt_list = [question_prefix + q + question_suffix + ' ' + a + '.' + ' ' for q, a in zip(x_inputs, x_labels)]
 
     # Glue the prompt list together:
     prompt = ''.join(prompt_list)
@@ -206,8 +223,8 @@ def do_sample(model, input_ids, stop_tokens, max_tokens):
     b. Don't use model.generate; implement this yourself in a loop
     c. Note 3: Be sure you understand what each dimension of the model’s output logits represents. 
        Misinterpreting the dimensions of this output can lead to subtle bugs.
-    d. ‘Greedy’ sampling means that given a context x<t producing a distribution over next tokens pθ(xt | x<t),
-       we deterministically choose the next token xt to be the token with highest probability.
+    d. ‘Greedy’ sampling means that given a context x_<t producing a distribution over next tokens pθ(x_t | x_<t),
+       we deterministically choose the next token x_t to be the token with highest probability.
     e. Stop at max tokens or a stop token
     '''
 
